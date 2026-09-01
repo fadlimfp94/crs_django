@@ -9,7 +9,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("catalogue/", include("academics.urls")),
     path("registration/", include("registration.urls")),
-    # Phase 5:   path("api/v1/", include("api.urls")),
+    path("api/v1/", include("api.urls")),
     path("", RedirectView.as_view(pattern_name="accounts:dashboard", permanent=False), name="home"),
 ]
 

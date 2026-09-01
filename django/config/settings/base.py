@@ -37,14 +37,16 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS: list[str] = [
-    # Phase 5: "rest_framework", "rest_framework.authtoken", "drf_spectacular"
+    "rest_framework",
+    "rest_framework.authtoken",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
     "accounts",
     "academics",
     "registration",
-    # Phase 5: "api"
+    "api",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -116,6 +118,43 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "accounts:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+
+# ─── REST API (Phase 5) ────────────────────────────────────────────────────────
+# Token auth is what mobile clients (Phase 7) use; session auth keeps the
+# browsable API and manual verification working from a logged-in browser.
+# RegistrationError -> {"rule": ..., "detail": ...} is wired through
+# EXCEPTION_HANDLER so every registration/drop/grade/override action gets a
+# structured error for free — see api/exceptions.py.
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "20/min",
+        "user": "120/min",
+        "auth": "10/min",
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "api.exceptions.crs_exception_handler",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CRS API",
+    "DESCRIPTION": "Course Registration System — courses, sections, terms, and enrollments.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
 
 # ─── Internationalisation ─────────────────────────────────────────────────────
 # Timestamps are stored in UTC; TIME_ZONE controls how they are rendered and

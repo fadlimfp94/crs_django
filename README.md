@@ -16,7 +16,7 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 4 of 8 complete.** The Django app is fully usable through the browser: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
+**Phase 5 of 8 complete.** The Django app is fully usable through the browser and now has a REST API alongside it: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The API (`/api/v1/`) exposes the same journeys over token/session auth with an OpenAPI schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -25,8 +25,8 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 | 2 | Academic catalogue | ✅ Done |
 | 3 | Registration rule engine | ✅ Done |
 | 4 | Web UI | ✅ Done |
-| 5 | REST API | ⬜ Next |
-| 6 | Playwright E2E suite | ⬜ |
+| 5 | REST API | ✅ Done |
+| 6 | Playwright E2E suite | ⬜ Next |
 | 7 | Compose Multiplatform mobile apps | ⬜ |
 | 8 | CI, hardening, documentation | ⬜ |
 
