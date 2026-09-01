@@ -28,6 +28,12 @@ select = [
 ignore = [
     "E501",    # line length — black owns this
     "RUF012",  # mutable class attrs need ClassVar; noisy against Django Meta
+    # The rule guards against homoglyph confusion in source. Our en dashes are
+    # deliberate typography in strings a user reads — ranges ("10:00–11:40") and
+    # separators ("CS — Computer Science"). Grade labels use a plain hyphen so
+    # they match the stored value; see academics/grades.py.
+    "RUF001",  # ambiguous unicode in a string
+    "RUF002",  # ambiguous unicode in a docstring
 ]
 
 [tool.ruff.lint.per-file-ignores]

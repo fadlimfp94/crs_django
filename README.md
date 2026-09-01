@@ -16,14 +16,14 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 1 of 8 complete.** The Django app runs: users can sign in and each role reaches its own dashboard. There is no course catalogue or registration yet. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
+**Phase 2 of 8 complete.** The Django app runs: users can sign in, each role reaches its own dashboard, and a seeded academic catalogue of 30 courses across 4 departments is browsable through the Django admin. Registration itself does not exist yet — that is Phase 3 — and there is no student-facing catalogue until Phase 4. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
 | 0 | Repository foundation | ✅ Done |
 | 1 | Django skeleton + authentication | ✅ Done |
-| 2 | Academic catalogue | ⬜ Next |
-| 3 | Registration rule engine | ⬜ |
+| 2 | Academic catalogue | ✅ Done |
+| 3 | Registration rule engine | ⬜ Next |
 | 4 | Web UI | ⬜ |
 | 5 | REST API | ⬜ |
 | 6 | Playwright E2E suite | ⬜ |
@@ -56,26 +56,49 @@ python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 
-# Database and accounts
+# Database and demo data
 python manage.py migrate
-python manage.py create_test_users     # one account per role, for local use
-python manage.py createsuperuser       # or your own admin account
+python manage.py seed_demo_data        # catalogue + accounts for every role
+python manage.py createsuperuser       # optional — your own admin account
 
 # Run
 python manage.py runserver
 ```
 
-The app is served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`.
+The app is served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`. Until Phase 4 the admin is the only way to browse the catalogue.
+
+### Demo data
+
+`seed_demo_data` is the one command you need: it calls `create_test_users` for you, then builds the catalogue.
+
+| | |
+|---|---|
+| 4 departments | Computer Science, Mathematics, Electrical Engineering, Business |
+| 5 programs | one per department, plus a master's in CS |
+| 30 courses | 29 prerequisite rules, deepest chain `CS101 → CS201 → CS301 → CS401` |
+| 2 terms | `2026-FALL` open for registration, `2026-SPRING` closed |
+| 56 sections | 78 timetabled meetings on a four-slot weekday grid |
+| 9 lecturers, 7 students | students spanning four academic standings |
+
+Both seed commands are **idempotent and non-destructive** — re-running one leaves existing rows alone, including timetable edits you made by hand in the admin. Both refuse to run when `DEBUG` is off unless you pass `--force`, because they set well-known passwords. Use `--password` to choose your own.
+
+The registration window is written relative to the time you seed, so `2026-FALL` is always open when you start.
 
 ### Test accounts
 
-`create_test_users` is idempotent and creates these, all with the password `crs-dev-password`. It refuses to run when `DEBUG` is off unless you pass `--force`.
+All accounts use the password `crs-dev-password`.
 
-| Sign-in | Role | Lands on |
+| Sign-in | Role | Notes |
 |---|---|---|
-| `2026001` | Student | `/accounts/student/` |
-| `L-1001` | Lecturer | `/accounts/lecturer/` |
-| `admin` | Administrator | `/accounts/administrator/` (and `/admin/`) |
+| `admin` | Administrator | Also reaches `/admin/` |
+| `2026001` | Student | Active, CS bachelor's — the default student |
+| `2025002` | Student | On academic probation; rule R7 turns this one away |
+| `2024002` | Student | Suspended |
+| `2023001` | Student | Graduated |
+| `L-1001` | Lecturer | Teaches several CS sections |
+| `L-1002` … `L-1009` | Lecturer | The rest of the teaching staff |
+
+Each role lands on its own dashboard: `/accounts/student/`, `/accounts/lecturer/`, `/accounts/administrator/`.
 
 ### Settings modules
 
@@ -91,7 +114,7 @@ Selected with `DJANGO_SETTINGS_MODULE`; `manage.py` defaults to `dev`.
 
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test
-DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test accounts
+DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test academics
 
 ruff check .          # lint  (--fix to autofix)
 black .               # format
@@ -148,5 +171,7 @@ CourseRegistrationSystem/
 ## Conventions
 
 - **Business rules live in `django/registration/services.py`** — never in views, serializers, or model `save()` methods. The web UI, the REST API, and the admin all call the same service functions so a rule cannot be enforced inconsistently in one place and skipped in another.
+- **Grades are compared through `django/academics/grades.py`**, never as strings. `"B-" > "B+"` is true for Python and false for a registrar.
+- **Seat availability is counted, not stored.** There is no `seats_taken` column to drift out of step with the enrollment rows.
 - Python is formatted with `black` and linted with `ruff`.
 - Every registration rule (R1–R7 in [PLAN.md](PLAN.md#registration-rules-the-heart-of-the-system)) has unit tests covering both a passing and a failing case.

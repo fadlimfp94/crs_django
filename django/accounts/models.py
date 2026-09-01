@@ -67,7 +67,7 @@ class UserManager(DjangoUserManager):
     def create_student(self, username, email, password=None, *, student_number=None, **extra):
         """Create a STUDENT user together with its StudentProfile."""
         profile_fields = {
-            key: extra.pop(key) for key in ("enrollment_year", "status") if key in extra
+            key: extra.pop(key) for key in ("enrollment_year", "status", "program") if key in extra
         }
         extra["role"] = Role.STUDENT
         user = self.create_user(username, email, password, **extra)
@@ -81,7 +81,7 @@ class UserManager(DjangoUserManager):
     @transaction.atomic
     def create_lecturer(self, username, email, password=None, *, staff_number=None, **extra):
         """Create a LECTURER user together with its LecturerProfile."""
-        profile_fields = {key: extra.pop(key) for key in ("title",) if key in extra}
+        profile_fields = {key: extra.pop(key) for key in ("title", "department") if key in extra}
         extra["role"] = Role.LECTURER
         user = self.create_user(username, email, password, **extra)
         LecturerProfile.objects.create(
@@ -178,7 +178,15 @@ class StudentProfile(models.Model):
         default=StudentStatus.ACTIVE,
         db_index=True,
     )
-    # Phase 2 adds:  program = FK(academics.Program)
+    program = models.ForeignKey(
+        "academics.Program",
+        on_delete=models.PROTECT,
+        related_name="students",
+        null=True,
+        blank=True,
+        verbose_name=_("program"),
+        help_text=_("Degree program. Blank for a student not yet assigned one."),
+    )
 
     class Meta:
         verbose_name = _("student profile")
@@ -215,7 +223,15 @@ class LecturerProfile(models.Model):
         choices=LecturerTitle.choices,
         default=LecturerTitle.LECTURER,
     )
-    # Phase 2 adds:  department = FK(academics.Department)
+    department = models.ForeignKey(
+        "academics.Department",
+        on_delete=models.PROTECT,
+        related_name="lecturers",
+        null=True,
+        blank=True,
+        verbose_name=_("department"),
+        help_text=_("Home department. Blank for visiting or unaffiliated staff."),
+    )
 
     class Meta:
         verbose_name = _("lecturer profile")

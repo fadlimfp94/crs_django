@@ -175,10 +175,25 @@ Create the project with split settings (`base`/`dev`/`test`/`prod`). Add the `ac
 - The UI is hand-written CSS with no CDN, so the Playwright suite runs offline and deterministically.
 - Templates carry `data-testid` attributes throughout, to give Phase 6 stable selectors.
 
-### Phase 2 — Academic catalogue
+### Phase 2 — Academic catalogue ✅ COMPLETE
 Build the `academics` app: `Department`, `Program`, `Course`, `PrerequisiteRule`, `Term`, `Section`, `Meeting`. Rich admin with inlines (meetings inline on sections), list filters, and search. Add a `seed_demo_data` management command producing a realistic dataset: ~4 departments, ~30 courses with a prerequisite chain at least 3 levels deep, 2 terms (one open for registration, one closed), ~50 sections, and users of every role.
 
 *Done when:* `python manage.py seed_demo_data` populates a browsable catalogue from a clean database, and the command is idempotent.
+
+**Delivered:** all seven catalogue models with database-level constraints (not just `choices`); `academics/grades.py` with a grade-point scale; admin for all seven models with four inlines and working autocompletes; `seed_demo_data` producing 4 departments, 5 programs, 30 courses, 29 prerequisite rules, 2 terms, 56 sections and 78 meetings, plus 9 lecturers and 7 students; verified idempotent and non-destructive from a clean database; 176 passing tests (118 new), clean under `-W error::Warning`; `ruff`/`black` clean.
+
+**Design choices worth carrying into Phase 3:**
+- Seat counts are deliberately **not** stored on `Section`. Phase 3 counts `Enrollment` rows inside the write transaction, so there is no denormalised number to drift.
+- Prerequisites use an explicit through-model (`PrerequisiteRule`) with a `minimum_grade`, so R3 can demand better than a bare pass. Cycle detection is a graph walk in `clean()` — the database can only catch the self-reference case.
+- Grades are compared by **grade points, never strings**: `"B-" > "B+"` is true lexicographically and false academically. `academics/grades.py` owns the comparison; R3 must use it.
+- At most one `Term` may be active, enforced by a partial unique index rather than application code.
+- Clash detection is half-open (`a_start < b_end and b_start < a_end`), so 10:00–11:00 and 11:00–12:00 do not clash. `Section.clashes_with()` already exists for R5 to call.
+
+**Deviations from plan:**
+- `Section.room` was dropped, leaving `Meeting.room` the single source of truth — a section that meets in two rooms on two days cannot be described by one field on the section.
+- The seed timetable uses a uniform, strictly non-overlapping four-slot grid, which reduces occupancy checking to a set lookup on `(day, slot_index)`. Mixed-length sessions would have needed interval arithmetic in the seeder for no demonstrable gain.
+- 56 sections rather than "~50", because giving every level-100 course a second section is what makes the catalogue look real.
+- `academics` ships no views. The catalogue is browsable through the admin, as the "done when" asks; the student-facing catalogue is Phase 4, so `academics.urls` is not yet in `config/urls.py`.
 
 ### Phase 3 — Registration engine
 Implement R1–R7 and the `register` / `drop` / `promote_from_waitlist` services. Cover each rule with unit tests including boundary cases: registration window opening and closing to the second, a prerequisite passed vs. failed by one grade step, credit limit hit exactly vs. exceeded by one, meetings that touch end-to-start (10:00–11:00 and 11:00–12:00 must **not** clash) vs. genuinely overlap, last seat taken, and a concurrent double-registration attempt.
@@ -251,4 +266,5 @@ M3 is the point at which CRS becomes useful. Everything before it is scaffolding
 3. ~~Write `README.md`.~~ ✅ Done.
 4. ~~Confirm the assumptions in §2.~~ ✅ Confirmed 2026-09-01 — templates over SPA, and the one-user-model-plus-profiles shape.
 5. ~~Phase 1.~~ ✅ Done.
-6. Begin Phase 2 — the academic catalogue. First migration should add `Department`/`Program` and wire up the two deferred profile FKs.
+6. ~~Phase 2 — the academic catalogue.~~ ✅ Done. The migration added all seven models and wired up the two deferred profile FKs.
+7. Begin Phase 3 — the registration engine. Add the `registration` app with `Enrollment`, then build `registration/services.py` implementing R1–R7. Start with the rules that already have their machinery in place (R1 via `Term.registration_is_open`, R5 via `Section.clashes_with`, R7 via `StudentProfile.may_register`) and treat R4 seat counting as the hard one: it is the only rule that needs `select_for_update()`, and §8 names seat overselling as a live risk. Do not move past this phase with any rule test skipped.

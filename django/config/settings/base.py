@@ -42,7 +42,7 @@ THIRD_PARTY_APPS: list[str] = [
 
 LOCAL_APPS = [
     "accounts",
-    # Phase 2: "academics"
+    "academics",
     # Phase 3: "registration"
     # Phase 5: "api"
 ]

@@ -19,7 +19,8 @@ class StudentProfileInline(admin.StackedInline):
     model = StudentProfile
     can_delete = False
     verbose_name_plural = _("Student profile")
-    fields = ("student_number", "enrollment_year", "status")
+    fields = ("student_number", "program", "enrollment_year", "status")
+    autocomplete_fields = ("program",)
     # A user has at most one profile, so cap the formset at one form. Without
     # this the admin offers spare "add another" forms that can never be valid.
     max_num = 1
@@ -29,7 +30,8 @@ class LecturerProfileInline(admin.StackedInline):
     model = LecturerProfile
     can_delete = False
     verbose_name_plural = _("Lecturer profile")
-    fields = ("staff_number", "title")
+    fields = ("staff_number", "title", "department")
+    autocomplete_fields = ("department",)
     max_num = 1
 
 
@@ -98,17 +100,17 @@ class UserAdmin(DjangoUserAdmin):
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("student_number", "user", "status", "enrollment_year")
-    list_filter = ("status", "enrollment_year")
+    list_display = ("student_number", "user", "program", "status", "enrollment_year")
+    list_filter = ("status", "enrollment_year", "program__department", "program")
     search_fields = ("student_number", "user__username", "user__first_name", "user__last_name")
-    list_select_related = ("user",)
-    autocomplete_fields = ("user",)
+    list_select_related = ("user", "program")
+    autocomplete_fields = ("user", "program")
 
 
 @admin.register(LecturerProfile)
 class LecturerProfileAdmin(admin.ModelAdmin):
-    list_display = ("staff_number", "user", "title")
-    list_filter = ("title",)
+    list_display = ("staff_number", "user", "title", "department")
+    list_filter = ("title", "department")
     search_fields = ("staff_number", "user__username", "user__first_name", "user__last_name")
-    list_select_related = ("user",)
-    autocomplete_fields = ("user",)
+    list_select_related = ("user", "department")
+    autocomplete_fields = ("user", "department")
