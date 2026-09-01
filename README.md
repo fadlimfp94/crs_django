@@ -16,15 +16,15 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 2 of 8 complete.** The Django app runs: users can sign in, each role reaches its own dashboard, and a seeded academic catalogue of 30 courses across 4 departments is browsable through the Django admin. Registration itself does not exist yet — that is Phase 3 — and there is no student-facing catalogue until Phase 4. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
+**Phase 3 of 8 complete.** The Django app runs: users can sign in, each role reaches its own dashboard, a seeded academic catalogue of 30 courses across 4 departments is browsable through the Django admin, and the registration rule engine (`register`/`drop`/`promote_from_waitlist`, rules R1–R7) is fully implemented and tested — but only reachable through the Django shell or admin, since there is no student-facing catalogue or registration UI until Phase 4. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
 | 0 | Repository foundation | ✅ Done |
 | 1 | Django skeleton + authentication | ✅ Done |
 | 2 | Academic catalogue | ✅ Done |
-| 3 | Registration rule engine | ⬜ Next |
-| 4 | Web UI | ⬜ |
+| 3 | Registration rule engine | ✅ Done |
+| 4 | Web UI | ⬜ Next |
 | 5 | REST API | ⬜ |
 | 6 | Playwright E2E suite | ⬜ |
 | 7 | Compose Multiplatform mobile apps | ⬜ |
@@ -115,6 +115,7 @@ Selected with `DJANGO_SETTINGS_MODULE`; `manage.py` defaults to `dev`.
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test
 DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test academics
+DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test registration
 
 ruff check .          # lint  (--fix to autofix)
 black .               # format

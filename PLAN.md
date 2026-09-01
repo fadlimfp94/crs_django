@@ -195,10 +195,17 @@ Build the `academics` app: `Department`, `Program`, `Course`, `PrerequisiteRule`
 - 56 sections rather than "~50", because giving every level-100 course a second section is what makes the catalogue look real.
 - `academics` ships no views. The catalogue is browsable through the admin, as the "done when" asks; the student-facing catalogue is Phase 4, so `academics.urls` is not yet in `config/urls.py`.
 
-### Phase 3 — Registration engine
+### Phase 3 — Registration engine ✅ COMPLETE
 Implement R1–R7 and the `register` / `drop` / `promote_from_waitlist` services. Cover each rule with unit tests including boundary cases: registration window opening and closing to the second, a prerequisite passed vs. failed by one grade step, credit limit hit exactly vs. exceeded by one, meetings that touch end-to-start (10:00–11:00 and 11:00–12:00 must **not** clash) vs. genuinely overlap, last seat taken, and a concurrent double-registration attempt.
 
 *Done when:* the rule test suite passes and every rule has at least one passing and one failing case. This phase carries the highest defect risk — do not move on with tests skipped.
+
+**Delivered:** the `registration` app with `Enrollment` (one row per (student, section) pair for the entire relationship's history, `on_delete=PROTECT` on both FKs, two `CheckConstraint`s for waitlist-position and grade consistency); `registration/services.py` implementing R1–R7 as small single-purpose functions each with its own passing/failing test, plus `register()`, `drop()`, and `promote_from_waitlist()`; waitlist promotion re-validates R4, R5, and R7 before promoting — a candidate who now fails one is skipped (left waitlisted at their existing position) and the next candidate is tried, per the design decision above; `EnrollmentAdmin` with autocomplete on student/section; 39 new passing tests (10 model, 28 service/rule, 1 real-thread concurrency test asserting exactly one of two simultaneous registrants gets the last seat); `ruff`/`black` clean; manually verified end-to-end against seeded data (register → waitlist → drop → promotion).
+
+**Deviations from plan:**
+- Added an application-level `_retry_on_lock` decorator around `register`/`drop`/`promote_from_waitlist`. SQLite's shared-cache mode raises a distinct error, `SQLITE_LOCKED` ("database table is locked"), when two same-process connections touch the same table concurrently — and SQLite deliberately skips the busy handler for this case (to avoid a same-process deadlock), so the 20-second `busy_timeout` from Phase 1 never engages. The concurrency test surfaced this; a handful of short retries resolves it, and the decorator is a no-op on PostgreSQL.
+- `Enrollment.grade` uses `blank=True, default=""` rather than `null=True`, matching this codebase's `ruff` `DJ001` convention (already followed elsewhere); `""` is the "no grade yet" sentinel, excluded from `choices`.
+- Fixed a pre-existing drift found while running `makemigrations`: `academics.PrerequisiteRule.minimum_grade`'s committed migration had a typographic minus (`A−`) where the model code has always used a plain hyphen (`A-`). Landed as `academics/migrations/0002_alter_prerequisiterule_minimum_grade.py` — choices metadata only, no stored-data impact.
 
 ### Phase 4 — Web UI
 Student: catalogue browse with filters (department, term, credits, availability, free-text search), section detail, register/drop with confirmation, "my timetable" as a weekly grid, and enrollment history. Lecturer: assigned sections, roster, grade entry. Admin: registration-window control and enrollment override, beyond what Django admin gives for free. Every rule rejection surfaces the specific reason, never a generic failure.
@@ -267,4 +274,5 @@ M3 is the point at which CRS becomes useful. Everything before it is scaffolding
 4. ~~Confirm the assumptions in §2.~~ ✅ Confirmed 2026-09-01 — templates over SPA, and the one-user-model-plus-profiles shape.
 5. ~~Phase 1.~~ ✅ Done.
 6. ~~Phase 2 — the academic catalogue.~~ ✅ Done. The migration added all seven models and wired up the two deferred profile FKs.
-7. Begin Phase 3 — the registration engine. Add the `registration` app with `Enrollment`, then build `registration/services.py` implementing R1–R7. Start with the rules that already have their machinery in place (R1 via `Term.registration_is_open`, R5 via `Section.clashes_with`, R7 via `StudentProfile.may_register`) and treat R4 seat counting as the hard one: it is the only rule that needs `select_for_update()`, and §8 names seat overselling as a live risk. Do not move past this phase with any rule test skipped.
+7. ~~Phase 3 — the registration engine.~~ ✅ Done. `register`/`drop`/`promote_from_waitlist` implement R1–R7; the concurrency test confirmed no overselling under a real race.
+8. Begin Phase 4 — the web UI. Student catalogue browse/filter, section detail, register/drop with confirmation, "my timetable", enrollment history; lecturer roster and grade entry; admin registration-window control and enrollment override. Every rule rejection must surface `RegistrationError`'s specific message, never a generic failure.
