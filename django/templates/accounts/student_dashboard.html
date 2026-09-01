@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Student dashboard &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="student-dashboard">
+  <h1>Welcome, {{ user.display_name }}</h1>
+  <p class="lede">Student dashboard</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2 class="card__title">Your record</h2>
+    <dl class="detail-list">
+      <dt>Student number</dt>
+      <dd data-testid="student-number">{{ user.student_profile.student_number }}</dd>
+      <dt>Academic standing</dt>
+      <dd>
+        {% if user.student_profile.may_register %}
+          <span class="badge badge--ok" data-testid="standing">{{ user.student_profile.get_status_display }}</span>
+        {% else %}
+          <span class="badge" data-testid="standing">{{ user.student_profile.get_status_display }}</span>
+        {% endif %}
+      </dd>
+      <dt>Enrolled since</dt>
+      <dd>{{ user.student_profile.enrollment_year }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Registration</h2>
+    <p class="lede">Course registration is not available yet.</p>
+    <ul class="roadmap">
+      <li><span class="badge badge--todo">Phase 2</span> Browse the course catalogue</li>
+      <li><span class="badge badge--todo">Phase 3</span> Prerequisite and clash checking</li>
+      <li><span class="badge badge--todo">Phase 4</span> Register, drop, and view your timetable</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

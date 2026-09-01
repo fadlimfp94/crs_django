@@ -162,10 +162,18 @@ Verify the Python toolchain. Create `.gitignore` (Python, Node, Gradle, Xcode, `
 
 *Done when:* `git log` shows an initial commit and a Django-compatible Python is confirmed working.
 
-### Phase 1 — Django skeleton and authentication
+### Phase 1 — Django skeleton and authentication ✅ COMPLETE
 Create the project with split settings (`base`/`dev`/`test`/`prod`). Add the `accounts` app with the custom user model and both profile models — **the custom user model must land before the first `migrate`**, as swapping it later requires destroying the database. Build login, logout, and password-change views plus a role-aware base template and navigation. Register everything in Django admin. Configure `ruff` and `black`.
 
 *Done when:* a superuser can log in, three test users (one per role) exist, and each lands on a role-appropriate placeholder dashboard.
+
+**Delivered:** Django 5.2.17 on Python 3.13.1; `User` (+`role`) with `StudentProfile`/`LecturerProfile`; role-guard mixins; login/logout/password-change; three placeholder dashboards; configured admin; `create_test_users` command; 58 passing tests; `ruff`/`black` clean; `check --deploy` clean under prod settings.
+
+**Deviations from plan, carried into Phase 2:**
+- `StudentProfile.program` and `LecturerProfile.department` are deferred — `Program` and `Department` do not exist until Phase 2. Phase 2 adds both as FK fields via a migration (no data to migrate, so this is cheap).
+- SQLite WAL mode, `foreign_keys=ON`, and a 20-second busy timeout were pulled forward from Phase 8 into `settings/base.py`, since they are one-line settings and PLAN.md §8 identifies lock contention as the main structural risk. The concurrency **load test** remains in Phase 8.
+- The UI is hand-written CSS with no CDN, so the Playwright suite runs offline and deterministically.
+- Templates carry `data-testid` attributes throughout, to give Phase 6 stable selectors.
 
 ### Phase 2 — Academic catalogue
 Build the `academics` app: `Department`, `Program`, `Course`, `PrerequisiteRule`, `Term`, `Section`, `Meeting`. Rich admin with inlines (meetings inline on sections), list filters, and search. Add a `seed_demo_data` management command producing a realistic dataset: ~4 departments, ~30 courses with a prerequisite chain at least 3 levels deep, 2 terms (one open for registration, one closed), ~50 sections, and users of every role.
@@ -241,5 +249,6 @@ M3 is the point at which CRS becomes useful. Everything before it is scaffolding
 1. ~~Verify the Python toolchain.~~ ✅ Python 3.13.1 confirmed.
 2. ~~`git init`, add `.gitignore`, first commit.~~ ✅ Done.
 3. ~~Write `README.md`.~~ ✅ Done.
-4. Confirm or amend the assumptions in §2 — particularly #1 (templates over SPA) and #5 (SQLite in production).
-5. Begin Phase 1. **Note:** the custom user model must be created before the first `migrate`.
+4. ~~Confirm the assumptions in §2.~~ ✅ Confirmed 2026-09-01 — templates over SPA, and the one-user-model-plus-profiles shape.
+5. ~~Phase 1.~~ ✅ Done.
+6. Begin Phase 2 — the academic catalogue. First migration should add `Department`/`Program` and wire up the two deferred profile FKs.

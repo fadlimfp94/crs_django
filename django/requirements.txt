@@ -1,0 +1,10 @@
+# CRS runtime dependencies.
+# Pinned exactly for reproducible installs; bump deliberately.
+#
+# Install:  pip install -r requirements.txt
+
+Django==5.2.17          # LTS — extended support to April 2028
+
+# Transitive, pinned for reproducibility
+asgiref==3.12.1
+sqlparse==0.6.0

@@ -1,0 +1,16 @@
+{% comment %}
+  Renders one form field with label, errors, and help text.
+  Usage:  {% include "accounts/_field.html" with field=form.username %}
+{% endcomment %}
+<div class="field">
+  {{ field.label_tag }}
+  {{ field }}
+  {% if field.help_text %}
+    <p class="field__help">{{ field.help_text|safe }}</p>
+  {% endif %}
+  {% if field.errors %}
+    <ul class="field__errors" data-testid="error-{{ field.name }}">
+      {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+</div>

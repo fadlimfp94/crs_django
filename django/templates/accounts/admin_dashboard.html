@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator dashboard &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="admin-dashboard">
+  <h1>Welcome, {{ user.display_name }}</h1>
+  <p class="lede">Administrator dashboard</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2 class="card__title">Administration</h2>
+    <p class="lede">
+      Accounts and profiles are managed through the Django admin site.
+    </p>
+    <a href="{% url 'admin:index' %}" class="btn" data-testid="open-django-admin">Open site admin</a>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Academic setup</h2>
+    <p class="lede">Purpose-built screens are not available yet.</p>
+    <ul class="roadmap">
+      <li><span class="badge badge--todo">Phase 2</span> Terms, courses, sections</li>
+      <li><span class="badge badge--todo">Phase 4</span> Registration windows and enrollment overrides</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

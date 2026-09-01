@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer dashboard &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="lecturer-dashboard">
+  <h1>Welcome, {{ user.display_name }}</h1>
+  <p class="lede">Lecturer dashboard</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2 class="card__title">Your details</h2>
+    <dl class="detail-list">
+      <dt>Staff number</dt>
+      <dd data-testid="staff-number">{{ user.lecturer_profile.staff_number }}</dd>
+      <dt>Title</dt>
+      <dd>{{ user.lecturer_profile.get_title_display }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Teaching</h2>
+    <p class="lede">Section assignments are not available yet.</p>
+    <ul class="roadmap">
+      <li><span class="badge badge--todo">Phase 2</span> Sections assigned to you</li>
+      <li><span class="badge badge--todo">Phase 4</span> Class rosters and grade submission</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

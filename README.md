@@ -16,13 +16,13 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 0 of 8 complete — foundation only.** The component directories are placeholders; no application code exists yet. The setup instructions below describe the intended workflow and will not run until the phases noted beside them are done.
+**Phase 1 of 8 complete.** The Django app runs: users can sign in and each role reaches its own dashboard. There is no course catalogue or registration yet. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
 | 0 | Repository foundation | ✅ Done |
-| 1 | Django skeleton + authentication | ⬜ Next |
-| 2 | Academic catalogue | ⬜ |
+| 1 | Django skeleton + authentication | ✅ Done |
+| 2 | Academic catalogue | ⬜ Next |
 | 3 | Registration rule engine | ⬜ |
 | 4 | Web UI | ⬜ |
 | 5 | REST API | ⬜ |
@@ -46,7 +46,7 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ---
 
-## Web application — `django/` *(available from Phase 1)*
+## Web application — `django/`
 
 ```bash
 cd django
@@ -54,24 +54,55 @@ cd django
 # One-time setup
 python3.13 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
-# Database and demo data
+# Database and accounts
 python manage.py migrate
-python manage.py seed_demo_data      # Phase 2 onward
-python manage.py createsuperuser
+python manage.py create_test_users     # one account per role, for local use
+python manage.py createsuperuser       # or your own admin account
 
 # Run
 python manage.py runserver
 ```
 
-The app is then served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`.
+The app is served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`.
 
-Unit tests:
+### Test accounts
+
+`create_test_users` is idempotent and creates these, all with the password `crs-dev-password`. It refuses to run when `DEBUG` is off unless you pass `--force`.
+
+| Sign-in | Role | Lands on |
+|---|---|---|
+| `2026001` | Student | `/accounts/student/` |
+| `L-1001` | Lecturer | `/accounts/lecturer/` |
+| `admin` | Administrator | `/accounts/administrator/` (and `/admin/`) |
+
+### Settings modules
+
+Selected with `DJANGO_SETTINGS_MODULE`; `manage.py` defaults to `dev`.
+
+| Module | Used for |
+|---|---|
+| `config.settings.dev` | Local development — `DEBUG=True`, relaxed password rules |
+| `config.settings.test` | Automated tests — in-memory database, fast password hasher |
+| `config.settings.prod` | Deployment — requires `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS`, and refuses to start without them |
+
+### Tests, linting, formatting
 
 ```bash
-python manage.py test                        # all
-python manage.py test registration           # rule engine only
+DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test
+DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test accounts
+
+ruff check .          # lint  (--fix to autofix)
+black .               # format
+```
+
+Before deploying, verify the production configuration:
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.prod \
+DJANGO_SECRET_KEY=... DJANGO_ALLOWED_HOSTS=crs.example.edu \
+  python manage.py check --deploy
 ```
 
 ## End-to-end tests — `playwright/` *(available from Phase 6)*

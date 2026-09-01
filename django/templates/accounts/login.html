@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <div class="auth__head">
+    <h1>Course Registration System</h1>
+    <p>Sign in to register for courses</p>
+  </div>
+
+  <div class="card">
+    <form method="post" novalidate data-testid="login-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <ul class="messages">
+          {% for error in form.non_field_errors %}
+            <li class="alert alert--danger" data-testid="login-error">{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% include "accounts/_field.html" with field=form.username %}
+      {% include "accounts/_field.html" with field=form.password %}
+
+      <button type="submit" class="btn btn--block" data-testid="login-submit">Sign in</button>
+    </form>
+  </div>
+
+  <p class="auth__footnote">
+    Lost your password? Contact the registrar's office.
+  </p>
+</div>
+{% endblock %}

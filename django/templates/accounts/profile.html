@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Your account &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="form-narrow" data-testid="profile-page">
+  <div class="page-head">
+    <h1>Your account</h1>
+    <p class="lede">Contact the registrar's office to correct any of these details.</p>
+  </div>
+
+  <div class="card">
+    <dl class="detail-list">
+      <dt>Name</dt>
+      <dd data-testid="profile-name">{{ user.display_name }}</dd>
+
+      <dt>Sign-in number</dt>
+      <dd data-testid="profile-username">{{ user.username }}</dd>
+
+      <dt>Email</dt>
+      <dd data-testid="profile-email">{{ user.email }}</dd>
+
+      <dt>Role</dt>
+      <dd data-testid="profile-role">{{ user.get_role_display }}</dd>
+
+      {% if user.is_student and profile %}
+        <dt>Student number</dt>
+        <dd>{{ profile.student_number }}</dd>
+        <dt>Academic standing</dt>
+        <dd>{{ profile.get_status_display }}</dd>
+        <dt>Enrolled since</dt>
+        <dd>{{ profile.enrollment_year }}</dd>
+      {% elif user.is_lecturer and profile %}
+        <dt>Staff number</dt>
+        <dd>{{ profile.staff_number }}</dd>
+        <dt>Title</dt>
+        <dd>{{ profile.get_title_display }}</dd>
+      {% endif %}
+
+      <dt>Last signed in</dt>
+      <dd>{{ user.last_login|date:"j M Y, H:i"|default:"—" }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Security</h2>
+    <a href="{% url 'accounts:password_change' %}" class="btn btn--secondary"
+       data-testid="change-password-link">Change password</a>
+  </div>
+</div>
+{% endblock %}

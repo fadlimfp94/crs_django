@@ -1,0 +1,8 @@
+# CRS development dependencies — linting, formatting, tooling.
+#
+# Install:  pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+ruff==0.16.5
+black==26.5.1

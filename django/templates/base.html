@@ -1,0 +1,65 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Course Registration System{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/crs.css' %}">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="container masthead__inner">
+    <a class="brand" href="{% url 'accounts:dashboard' %}" data-testid="brand">
+      <span class="brand__mark">CRS</span>
+      <span class="brand__text">Course Registration</span>
+    </a>
+
+    {% if user.is_authenticated %}
+      <nav class="nav" aria-label="Main">
+        <a href="{% url user.dashboard_url_name %}" data-testid="nav-dashboard">Dashboard</a>
+        {% comment %}
+          Nav grows as phases land. Only working links belong here — a dead
+          link is worse than an absent one.
+          Phase 2: catalogue · Phase 4: my timetable, rosters, term admin
+        {% endcomment %}
+        {% if user.is_administrator or user.is_staff %}
+          <a href="{% url 'admin:index' %}" data-testid="nav-django-admin">Site admin</a>
+        {% endif %}
+      </nav>
+
+      <div class="account">
+        <a class="account__name" href="{% url 'accounts:profile' %}" data-testid="nav-profile">
+          {{ user.display_name }}
+          <span class="badge badge--role" data-testid="role-badge">{{ user.get_role_display }}</span>
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn--quiet" data-testid="logout-button">Sign out</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+<main class="container main" id="content">
+  {% if messages %}
+    <ul class="messages" data-testid="messages">
+      {% for message in messages %}
+        <li class="alert alert--{{ message.tags|default:'info' }}"
+            data-testid="message-{{ message.tags|default:'info' }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>Course Registration System &middot; Phase 1 &mdash; authentication</p>
+  </div>
+</footer>
+
+</body>
+</html>
