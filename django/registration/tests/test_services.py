@@ -14,7 +14,15 @@ from django.utils import timezone
 
 from accounts.models import StudentStatus
 from registration.models import Enrollment, EnrollmentStatus
-from registration.services import RegistrationError, drop, promote_from_waitlist, register
+from registration.services import (
+    RegistrationError,
+    drop,
+    override_enrollment,
+    promote_from_waitlist,
+    record_grade,
+    register,
+    seats_remaining,
+)
 
 from .factories import (
     make_course,
@@ -358,3 +366,80 @@ class DropAndPromotionTests(RegistrationTestCase):
         second = register(self.first_student, self.section)
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(Enrollment.objects.filter(student=self.first_student).count(), 1)
+
+
+# --------------------------------------------------------------------------- #
+# seats_remaining()
+# --------------------------------------------------------------------------- #
+
+
+class SeatsRemainingTests(RegistrationTestCase):
+    def test_an_untouched_section_has_its_full_capacity_remaining(self):
+        self.assertEqual(seats_remaining(self.section), self.section.capacity)
+
+    def test_remaining_seats_drop_as_students_register(self):
+        register(self.student, self.section)
+        self.assertEqual(seats_remaining(self.section), self.section.capacity - 1)
+
+    def test_a_full_section_has_zero_remaining_not_negative(self):
+        tiny = make_section(self.course, self.term, section_code="02", capacity=1)
+        make_meeting(tiny, start=time(14, 0), end=time(15, 0))
+        register(self.student, tiny)
+        second_student = make_student()
+        register(second_student, tiny)  # waitlisted, does not count against capacity
+        self.assertEqual(seats_remaining(tiny), 0)
+
+
+# --------------------------------------------------------------------------- #
+# record_grade()
+# --------------------------------------------------------------------------- #
+
+
+class RecordGradeTests(RegistrationTestCase):
+    def test_grading_an_enrolled_student_completes_the_enrollment(self):
+        enrollment = register(self.student, self.section)
+        graded = record_grade(enrollment, "B")
+        self.assertEqual(graded.status, EnrollmentStatus.COMPLETED)
+        self.assertEqual(graded.grade, "B")
+
+    def test_grading_a_waitlisted_student_is_rejected(self):
+        make_section(self.course, self.term, section_code="02", capacity=1)
+        full = make_section(self.course, self.term, section_code="03", capacity=1)
+        make_meeting(full, start=time(14, 0), end=time(15, 0))
+        register(self.student, full)
+        second_student = make_student()
+        waitlisted = register(second_student, full)
+        with self.assertRaises(RegistrationError) as ctx:
+            record_grade(waitlisted, "B")
+        self.assertIsNone(ctx.exception.rule)
+
+    def test_grading_an_already_graded_enrollment_is_rejected(self):
+        enrollment = register(self.student, self.section)
+        record_grade(enrollment, "B")
+        with self.assertRaises(RegistrationError) as ctx:
+            record_grade(enrollment, "A")
+        self.assertIsNone(ctx.exception.rule)
+
+
+# --------------------------------------------------------------------------- #
+# override_enrollment()
+# --------------------------------------------------------------------------- #
+
+
+class OverrideEnrollmentTests(RegistrationTestCase):
+    def test_override_enrolls_a_student_who_would_fail_r7(self):
+        """A suspended student can never register(), but an admin override bypasses R7."""
+        suspended = make_student(status=StudentStatus.SUSPENDED)
+        enrollment = override_enrollment(suspended, self.section)
+        self.assertEqual(enrollment.status, EnrollmentStatus.ENROLLED)
+
+    def test_override_still_waitlists_when_the_section_is_full(self):
+        """R6 is not bypassed: a full section still waitlists an override."""
+        tiny = make_section(self.course, self.term, section_code="02", capacity=1)
+        make_meeting(tiny, start=time(14, 0), end=time(15, 0))
+        register(self.student, tiny)
+
+        suspended = make_student(status=StudentStatus.SUSPENDED)
+        enrollment = override_enrollment(suspended, tiny)
+        self.assertEqual(enrollment.status, EnrollmentStatus.WAITLISTED)
+        self.assertEqual(enrollment.waitlist_position, 1)

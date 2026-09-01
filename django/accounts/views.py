@@ -14,6 +14,8 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 
+from registration.models import EnrollmentStatus
+
 from .forms import CRSAuthenticationForm
 from .mixins import AdministratorRequiredMixin, LecturerRequiredMixin, StudentRequiredMixin
 
@@ -61,9 +63,21 @@ class DashboardRedirectView(LoginRequiredMixin, View):
 class StudentDashboardView(StudentRequiredMixin, TemplateView):
     template_name = "accounts/student_dashboard.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["enrolled_count"] = self.request.user.student_profile.enrollments.filter(
+            status=EnrollmentStatus.ENROLLED
+        ).count()
+        return context
+
 
 class LecturerDashboardView(LecturerRequiredMixin, TemplateView):
     template_name = "accounts/lecturer_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["section_count"] = self.request.user.lecturer_profile.sections.count()
+        return context
 
 
 class AdministratorDashboardView(AdministratorRequiredMixin, TemplateView):

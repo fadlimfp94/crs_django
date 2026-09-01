@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Registration windows &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="term-window-list">
+  <h1>Registration windows</h1>
+  <p class="lede">Each term's registration window and credit ceiling.</p>
+</div>
+
+<table class="catalogue-table" data-testid="term-window-table">
+  <thead>
+    <tr>
+      <th>Term</th>
+      <th>Status</th>
+      <th>Opens</th>
+      <th>Closes</th>
+      <th>Credit ceiling</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for term in terms %}
+      <tr data-testid="term-window-row">
+        <td>
+          {{ term.name }}
+          {% if term.is_active %}<span class="badge badge--role">Current</span>{% endif %}
+        </td>
+        <td><span class="badge">{{ term.registration_status }}</span></td>
+        <td>{{ term.registration_opens_at }}</td>
+        <td>{{ term.registration_closes_at }}</td>
+        <td>{{ term.max_credits_per_student }}</td>
+        <td>
+          <a href="{% url 'academics:admin_term_update' term.pk %}" class="btn btn--secondary" data-testid="term-window-edit">Edit</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

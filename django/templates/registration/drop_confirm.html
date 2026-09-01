@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Drop {{ enrollment.section }} &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="drop-confirm">
+  <h1>Drop {{ enrollment.section.course.label }}</h1>
+  <p class="lede">Section {{ enrollment.section.section_code }} &middot; {{ enrollment.section.term.name }}</p>
+</div>
+
+<div class="card form-narrow">
+  <p>
+    You are currently
+    <span class="badge">{{ enrollment.get_status_display }}</span>
+    in this section. Dropping frees your seat for the next waitlisted student.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--secondary btn--block" data-testid="drop-confirm-submit">Confirm drop</button>
+  </form>
+</div>
+{% endblock %}

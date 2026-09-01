@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Enrollment override &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="admin-override">
+  <h1>Enrollment override</h1>
+  <p class="lede">
+    Enrolls or waitlists a student without checking prerequisites, the credit
+    ceiling, timetable clashes, or academic standing. Seat capacity and
+    waitlist order are still respected. Use for exceptional, case-by-case
+    decisions only.
+  </p>
+</div>
+
+<form method="post" class="card form-narrow">
+  {% csrf_token %}
+  {% include "accounts/_field.html" with field=form.student %}
+  {% include "accounts/_field.html" with field=form.section %}
+  <button type="submit" class="btn btn--block" data-testid="admin-override-submit">Apply override</button>
+</form>
+{% endblock %}

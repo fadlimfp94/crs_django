@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Roster: {{ section }} &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="roster">
+  <h1>{{ section.course.label }}</h1>
+  <p class="lede">Section {{ section.section_code }} &middot; {{ section.term.name }}</p>
+</div>
+
+<div class="card">
+  <h2 class="card__title">Enrolled</h2>
+  {% if enrolled %}
+    <table class="roster-table" data-testid="roster-enrolled-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Grade</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment, grade_form in enrolled %}
+          <tr data-testid="roster-enrolled-row">
+            <td>{{ enrollment.student.user.display_name }} ({{ enrollment.student.student_number }})</td>
+            <td>{{ enrollment.grade|default:"—" }}</td>
+            <td>
+              <form method="post" action="{% url 'registration:grade_entry' enrollment.pk %}" class="roster-grade-form">
+                {% csrf_token %}
+                {{ grade_form.grade }}
+                <button type="submit" class="btn btn--secondary" data-testid="roster-grade-submit">Record grade</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="lede" data-testid="roster-enrolled-empty">No students currently enrolled.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 class="card__title">Waitlist</h2>
+  {% if waitlisted %}
+    <table class="roster-table" data-testid="roster-waitlist-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Student</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in waitlisted %}
+          <tr data-testid="roster-waitlist-row">
+            <td>{{ enrollment.waitlist_position }}</td>
+            <td>{{ enrollment.student.user.display_name }} ({{ enrollment.student.student_number }})</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="lede" data-testid="roster-waitlist-empty">No one is waitlisted.</p>
+  {% endif %}
+</div>
+{% endblock %}

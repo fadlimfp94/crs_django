@@ -16,7 +16,7 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 3 of 8 complete.** The Django app runs: users can sign in, each role reaches its own dashboard, a seeded academic catalogue of 30 courses across 4 departments is browsable through the Django admin, and the registration rule engine (`register`/`drop`/`promote_from_waitlist`, rules R1–R7) is fully implemented and tested — but only reachable through the Django shell or admin, since there is no student-facing catalogue or registration UI until Phase 4. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
+**Phase 4 of 8 complete.** The Django app is fully usable through the browser: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -24,8 +24,8 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 | 1 | Django skeleton + authentication | ✅ Done |
 | 2 | Academic catalogue | ✅ Done |
 | 3 | Registration rule engine | ✅ Done |
-| 4 | Web UI | ⬜ Next |
-| 5 | REST API | ⬜ |
+| 4 | Web UI | ✅ Done |
+| 5 | REST API | ⬜ Next |
 | 6 | Playwright E2E suite | ⬜ |
 | 7 | Compose Multiplatform mobile apps | ⬜ |
 | 8 | CI, hardening, documentation | ⬜ |
@@ -65,7 +65,7 @@ python manage.py createsuperuser       # optional — your own admin account
 python manage.py runserver
 ```
 
-The app is served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`. Until Phase 4 the admin is the only way to browse the catalogue.
+The app is served at <http://127.0.0.1:8000/>, with the Django admin at `/admin/`. Sign in and each role lands on its own dashboard, from which the catalogue, timetable, rosters, and admin tools are all reachable.
 
 ### Demo data
 

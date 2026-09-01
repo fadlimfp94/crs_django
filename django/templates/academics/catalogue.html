@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogue &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="catalogue">
+  <h1>Course catalogue</h1>
+  <p class="lede">Browse sections by department, term, credits, and availability.</p>
+</div>
+
+<form method="get" class="card catalogue-filters" data-testid="catalogue-filter-form">
+  <div class="catalogue-filters__row">
+    <div class="field">
+      {{ filter_form.department.label_tag }}
+      {{ filter_form.department }}
+    </div>
+    <div class="field">
+      {{ filter_form.term.label_tag }}
+      {{ filter_form.term }}
+    </div>
+    <div class="field">
+      {{ filter_form.q.label_tag }}
+      {{ filter_form.q }}
+    </div>
+    <div class="field">
+      {{ filter_form.min_credits.label_tag }}
+      {{ filter_form.min_credits }}
+    </div>
+    <div class="field">
+      {{ filter_form.max_credits.label_tag }}
+      {{ filter_form.max_credits }}
+    </div>
+    <div class="field">
+      {{ filter_form.availability.label_tag }}
+      {{ filter_form.availability }}
+    </div>
+  </div>
+  <button type="submit" class="btn" data-testid="catalogue-filter-submit">Apply filters</button>
+</form>
+
+{% if sections %}
+  <table class="catalogue-table" data-testid="catalogue-table">
+    <thead>
+      <tr>
+        <th>Course</th>
+        <th>Section</th>
+        <th>Term</th>
+        <th>Lecturer</th>
+        <th>Meetings</th>
+        <th>Seats</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for section in sections %}
+        <tr data-testid="catalogue-row">
+          <td>
+            <a href="{% url 'academics:section_detail' section.pk %}" data-testid="catalogue-row-course">
+              {{ section.course.label }}
+            </a>
+          </td>
+          <td>{{ section.section_code }}</td>
+          <td>{{ section.term.code }}</td>
+          <td>{{ section.lecturer_name }}</td>
+          <td>
+            {% for meeting in section.meetings.all %}
+              <div>{{ meeting }}</div>
+            {% endfor %}
+          </td>
+          <td>
+            {% if section.seats_remaining > 0 %}
+              <span class="badge badge--ok" data-testid="catalogue-row-seats">{{ section.seats_remaining }} open</span>
+            {% else %}
+              <span class="badge" data-testid="catalogue-row-seats">Full — waitlist</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'academics:section_detail' section.pk %}" class="btn btn--secondary" data-testid="catalogue-row-view">View</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.has_other_pages %}
+    <nav class="pagination" data-testid="catalogue-pagination">
+      {% if page_obj.has_previous %}
+        <a href="?{{ querystring }}&page={{ page_obj.previous_page_number }}" data-testid="catalogue-page-prev">&laquo; Previous</a>
+      {% endif %}
+      <span data-testid="catalogue-page-current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?{{ querystring }}&page={{ page_obj.next_page_number }}" data-testid="catalogue-page-next">Next &raquo;</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% else %}
+  <p class="lede" data-testid="catalogue-empty">No sections match those filters.</p>
+{% endif %}
+{% endblock %}

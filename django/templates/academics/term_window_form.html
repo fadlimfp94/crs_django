@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ term }} &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="term-window-form">
+  <h1>Edit {{ term }}</h1>
+  <p class="lede">Registration window and credit ceiling for this term.</p>
+</div>
+
+<form method="post" class="card form-narrow">
+  {% csrf_token %}
+  {% include "accounts/_field.html" with field=form.registration_opens_at %}
+  {% include "accounts/_field.html" with field=form.registration_closes_at %}
+  {% include "accounts/_field.html" with field=form.max_credits_per_student %}
+  <button type="submit" class="btn btn--block" data-testid="term-window-save">Save</button>
+</form>
+{% endblock %}

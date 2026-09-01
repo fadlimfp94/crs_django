@@ -19,10 +19,10 @@
 
   <div class="card">
     <h2 class="card__title">Academic setup</h2>
-    <p class="lede">Purpose-built screens are not available yet.</p>
+    <p class="lede">Terms, courses, and sections are managed through the Django admin.</p>
     <ul class="roadmap">
-      <li><span class="badge badge--todo">Phase 2</span> Terms, courses, sections</li>
-      <li><span class="badge badge--todo">Phase 4</span> Registration windows and enrollment overrides</li>
+      <li><a href="{% url 'academics:admin_term_list' %}" data-testid="dashboard-term-windows-link">Registration windows</a></li>
+      <li><a href="{% url 'registration:admin_override' %}" data-testid="dashboard-override-link">Enrollment override</a></li>
     </ul>
   </div>
 </div>

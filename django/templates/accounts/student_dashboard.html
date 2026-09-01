@@ -29,11 +29,13 @@
 
   <div class="card">
     <h2 class="card__title">Registration</h2>
-    <p class="lede">Course registration is not available yet.</p>
+    <p class="lede" data-testid="student-enrolled-count">
+      Currently enrolled in {{ enrolled_count }} section{{ enrolled_count|pluralize }}.
+    </p>
     <ul class="roadmap">
-      <li><span class="badge badge--todo">Phase 2</span> Browse the course catalogue</li>
-      <li><span class="badge badge--todo">Phase 3</span> Prerequisite and clash checking</li>
-      <li><span class="badge badge--todo">Phase 4</span> Register, drop, and view your timetable</li>
+      <li><a href="{% url 'academics:catalogue' %}" data-testid="dashboard-catalogue-link">Browse the catalogue</a></li>
+      <li><a href="{% url 'registration:my_timetable' %}" data-testid="dashboard-timetable-link">My timetable</a></li>
+      <li><a href="{% url 'registration:enrollment_history' %}" data-testid="dashboard-enrollments-link">My enrollments</a></li>
     </ul>
   </div>
 </div>

@@ -18,11 +18,16 @@
     {% if user.is_authenticated %}
       <nav class="nav" aria-label="Main">
         <a href="{% url user.dashboard_url_name %}" data-testid="nav-dashboard">Dashboard</a>
-        {% comment %}
-          Nav grows as phases land. Only working links belong here — a dead
-          link is worse than an absent one.
-          Phase 2: catalogue · Phase 4: my timetable, rosters, term admin
-        {% endcomment %}
+        <a href="{% url 'academics:catalogue' %}" data-testid="nav-catalogue">Catalogue</a>
+        {% if user.is_student %}
+          <a href="{% url 'registration:my_timetable' %}" data-testid="nav-my-timetable">My timetable</a>
+          <a href="{% url 'registration:enrollment_history' %}" data-testid="nav-my-enrollments">My enrollments</a>
+        {% elif user.is_lecturer %}
+          <a href="{% url 'registration:lecturer_sections' %}" data-testid="nav-my-sections">My sections</a>
+        {% elif user.is_administrator %}
+          <a href="{% url 'academics:admin_term_list' %}" data-testid="nav-term-windows">Registration windows</a>
+          <a href="{% url 'registration:admin_override' %}" data-testid="nav-override">Enrollment override</a>
+        {% endif %}
         {% if user.is_administrator or user.is_staff %}
           <a href="{% url 'admin:index' %}" data-testid="nav-django-admin">Site admin</a>
         {% endif %}

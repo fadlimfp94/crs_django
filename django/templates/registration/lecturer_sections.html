@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}My sections &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="lecturer-sections">
+  <h1>My sections</h1>
+  <p class="lede">Sections you are assigned to teach.</p>
+</div>
+
+{% if sections %}
+  <table class="catalogue-table" data-testid="lecturer-sections-table">
+    <thead>
+      <tr>
+        <th>Course</th>
+        <th>Section</th>
+        <th>Term</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for section in sections %}
+        <tr data-testid="lecturer-sections-row">
+          <td>{{ section.course.label }}</td>
+          <td>{{ section.section_code }}</td>
+          <td>{{ section.term.code }}</td>
+          <td>
+            <a href="{% url 'registration:roster' section.pk %}" class="btn btn--secondary" data-testid="lecturer-sections-roster">Roster</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="lede" data-testid="lecturer-sections-empty">You are not assigned to any sections.</p>
+{% endif %}
+{% endblock %}

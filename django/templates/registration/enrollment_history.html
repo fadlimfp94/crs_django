@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}My enrollments &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="enrollment-history">
+  <h1>My enrollments</h1>
+  <p class="lede">Every section you have registered for, past and present.</p>
+</div>
+
+{% if enrollments %}
+  <table class="catalogue-table" data-testid="enrollment-history-table">
+    <thead>
+      <tr>
+        <th>Course</th>
+        <th>Term</th>
+        <th>Status</th>
+        <th>Grade</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for enrollment in enrollments %}
+        <tr data-testid="enrollment-history-row">
+          <td>{{ enrollment.section.course.label }}</td>
+          <td>{{ enrollment.section.term.code }}</td>
+          <td>
+            <span class="badge{% if enrollment.status == 'ENROLLED' or enrollment.status == 'COMPLETED' %} badge--ok{% endif %}">
+              {{ enrollment.get_status_display }}{% if enrollment.status == "WAITLISTED" %} &mdash; #{{ enrollment.waitlist_position }}{% endif %}
+            </span>
+          </td>
+          <td>{{ enrollment.grade|default:"—" }}</td>
+          <td>
+            {% if enrollment.status == "ENROLLED" or enrollment.status == "WAITLISTED" %}
+              <a href="{% url 'registration:drop' enrollment.pk %}" class="btn btn--secondary" data-testid="enrollment-history-drop">Drop</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="lede" data-testid="enrollment-history-empty">You have no enrollments yet.</p>
+{% endif %}
+{% endblock %}

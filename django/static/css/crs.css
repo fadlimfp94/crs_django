@@ -356,3 +356,109 @@ kbd {
   .nav { margin-left: 0; order: 3; width: 100%; }
   .account { margin-left: auto; }
 }
+
+/* ─── Catalogue filters ────────────────────────────────────────────────────── */
+
+.catalogue-filters { margin-bottom: var(--gap); }
+
+.catalogue-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-bottom: .75rem;
+}
+
+.catalogue-filters__row .field { margin-bottom: 0; min-width: 160px; flex: 1 1 160px; }
+
+/* ─── Data tables (catalogue, roster, enrollment history) ─────────────────── */
+
+.catalogue-table, .roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: var(--gap);
+}
+
+.catalogue-table th, .catalogue-table td,
+.roster-table th, .roster-table td {
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: .88rem;
+}
+
+.catalogue-table thead th, .roster-table thead th {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--ink-faint);
+  background: var(--canvas);
+}
+
+.catalogue-table tbody tr:last-child td,
+.roster-table tbody tr:last-child td { border-bottom: none; }
+
+.pagination { display: flex; gap: 1rem; align-items: center; font-size: .85rem; color: var(--ink-soft); }
+
+.pagination a { color: var(--accent); text-decoration: none; }
+
+.pagination a:hover { text-decoration: underline; }
+
+/* ─── Timetable grid ───────────────────────────────────────────────────────── */
+
+.timetable {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  grid-template-rows: repeat(var(--timetable-rows), 1.7rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.timetable__day-head {
+  grid-row: 1;
+  padding: .4rem;
+  font-size: .78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.timetable__time {
+  grid-column: 1;
+  font-size: .72rem;
+  color: var(--ink-faint);
+  padding: .1rem .4rem;
+  border-top: 1px solid var(--line);
+}
+
+.timetable__block {
+  margin: 1px 2px;
+  padding: .3rem .45rem;
+  border-radius: 4px;
+  background: var(--accent-wash);
+  border: 1px solid #c6d9ef;
+  color: var(--accent-dark);
+  font-size: .78rem;
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  overflow: hidden;
+}
+
+/* ─── Roster grade entry ───────────────────────────────────────────────────── */
+
+.roster-grade-form { display: flex; gap: .5rem; align-items: center; margin: 0; }
+
+.roster-grade-form select {
+  font: inherit;
+  padding: .3rem .4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}

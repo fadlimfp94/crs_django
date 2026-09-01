@@ -156,6 +156,18 @@ def _seats_taken(section) -> int:
     return Enrollment.objects.filter(section=section, status=EnrollmentStatus.ENROLLED).count()
 
 
+def seats_remaining(section) -> int:
+    """
+    Public seat count for display (catalogue, section detail).
+
+    Advisory only — a moment-in-time read outside any transaction, so it can
+    go stale between rendering a page and a student clicking Register. The
+    real check happens inside ``register()``'s own transaction; this exists
+    only so the UI doesn't have to guess.
+    """
+    return max(section.capacity - _seats_taken(section), 0)
+
+
 def _next_waitlist_position(section) -> int:
     last = (
         Enrollment.objects.filter(section=section, status=EnrollmentStatus.WAITLISTED)
@@ -280,3 +292,43 @@ def promote_from_waitlist(section) -> Enrollment | None:
         candidate.save(update_fields=["status", "waitlist_position", "registered_at"])
         _renumber_waitlist(section)
         return candidate
+
+
+@transaction.atomic
+def record_grade(enrollment, grade: str) -> Enrollment:
+    """A lecturer records a final grade for one of their currently enrolled students."""
+    if enrollment.status != EnrollmentStatus.ENROLLED:
+        raise RegistrationError("Only a currently enrolled student can be graded.")
+    enrollment.status = EnrollmentStatus.COMPLETED
+    enrollment.grade = grade
+    enrollment.save(update_fields=["status", "grade"])
+    return enrollment
+
+
+@_retry_on_lock
+@transaction.atomic
+def override_enrollment(student, section) -> Enrollment:
+    """
+    Administrative override: enroll or waitlist ``student`` in ``section``
+    without consulting R1-R5 or R7.
+
+    For exceptional, case-by-case registrar decisions (a waived prerequisite,
+    a manually resolved dispute) — not exposed to anyone but administrators.
+    R6 still runs, so seat counts and waitlist positions stay consistent with
+    every enrollment created through ``register()``.
+    """
+    section = (
+        Section.objects.select_for_update().select_related("term", "course").get(pk=section.pk)
+    )
+    status, waitlist_position = _determine_seat_outcome(section)  # R6
+    enrollment, _created = Enrollment.objects.update_or_create(
+        student=student,
+        section=section,
+        defaults={
+            "status": status,
+            "waitlist_position": waitlist_position,
+            "registered_at": timezone.now(),
+            "dropped_at": None,
+        },
+    )
+    return enrollment

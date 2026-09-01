@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section }} &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="section-detail">
+  <h1>{{ section.course.label }}</h1>
+  <p class="lede">Section {{ section.section_code }} &middot; {{ section.term.name }}</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2 class="card__title">Details</h2>
+    <dl class="detail-list">
+      <dt>Lecturer</dt>
+      <dd data-testid="section-lecturer">{{ section.lecturer_name }}</dd>
+      <dt>Credits</dt>
+      <dd>{{ section.credits }}</dd>
+      <dt>Meetings</dt>
+      <dd data-testid="section-meetings">
+        {% for meeting in section.meetings.all %}
+          <div>{{ meeting }}</div>
+        {% empty %}
+          <span class="badge badge--todo">No scheduled meetings</span>
+        {% endfor %}
+      </dd>
+      <dt>Seats</dt>
+      <dd>
+        {% if seats_remaining > 0 %}
+          <span class="badge badge--ok" data-testid="section-seats">{{ seats_remaining }} of {{ section.capacity }} open</span>
+        {% else %}
+          <span class="badge" data-testid="section-seats">Full &mdash; registering waitlists you</span>
+        {% endif %}
+      </dd>
+    </dl>
+  </div>
+
+  {% if user.is_student %}
+    <div class="card">
+      <h2 class="card__title">Registration</h2>
+      {% if enrollment.status == "ENROLLED" %}
+        <p data-testid="section-action-status"><span class="badge badge--ok">Enrolled</span></p>
+        <a href="{% url 'registration:drop' enrollment.pk %}" class="btn btn--secondary" data-testid="section-drop-link">Drop</a>
+      {% elif enrollment.status == "WAITLISTED" %}
+        <p data-testid="section-action-status">
+          <span class="badge">Waitlisted &mdash; position {{ enrollment.waitlist_position }}</span>
+        </p>
+        <a href="{% url 'registration:drop' enrollment.pk %}" class="btn btn--secondary" data-testid="section-drop-link">Leave waitlist</a>
+      {% elif enrollment.status == "COMPLETED" %}
+        <p data-testid="section-action-status">
+          <span class="badge badge--ok">Completed{% if enrollment.grade %} &mdash; {{ enrollment.grade }}{% endif %}</span>
+        </p>
+      {% else %}
+        <a href="{% url 'registration:register' section.pk %}" class="btn" data-testid="section-register-link">Register</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

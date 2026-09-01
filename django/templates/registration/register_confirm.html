@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Register for {{ section }} &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="register-confirm">
+  <h1>Register for {{ section.course.label }}</h1>
+  <p class="lede">Section {{ section.section_code }} &middot; {{ section.term.name }}</p>
+</div>
+
+<div class="card form-narrow">
+  <dl class="detail-list">
+    <dt>Lecturer</dt>
+    <dd>{{ section.lecturer_name }}</dd>
+    <dt>Meetings</dt>
+    <dd>
+      {% for meeting in section.meetings.all %}
+        <div>{{ meeting }}</div>
+      {% endfor %}
+    </dd>
+  </dl>
+
+  {% if error %}
+    <p class="alert alert--danger" data-testid="registration-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--block" data-testid="register-confirm-submit">Confirm registration</button>
+  </form>
+</div>
+{% endblock %}

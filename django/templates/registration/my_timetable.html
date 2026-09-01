@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}My timetable &middot; CRS{% endblock %}
+
+{% block content %}
+<div class="page-head" data-testid="my-timetable">
+  <h1>My timetable</h1>
+  <p class="lede">{% if term %}{{ term.name }}{% endif %}</p>
+</div>
+
+{% if blocks %}
+  <div class="timetable" data-testid="timetable-grid" style="--timetable-rows: {{ total_rows }};">
+    <div class="timetable__corner"></div>
+    {% for value, label in days %}
+      <div class="timetable__day-head" style="grid-column: {{ value|add:2 }};">{{ label }}</div>
+    {% endfor %}
+
+    {% for tick in hour_ticks %}
+      <div class="timetable__time" style="grid-row: {{ tick.row }};">{{ tick.label }}</div>
+    {% endfor %}
+
+    {% for block in blocks %}
+      <div class="timetable__block"
+           data-testid="timetable-block"
+           style="grid-row: {{ block.grid_row }} / span {{ block.grid_row_span }}; grid-column: {{ block.grid_column }};">
+        <strong>{{ block.course.code }}</strong>
+        <span>{{ block.meeting.start_time|time:"H:i" }}&ndash;{{ block.meeting.end_time|time:"H:i" }}</span>
+        {% if block.meeting.room %}<span>{{ block.meeting.room }}</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="lede" data-testid="timetable-empty">No active enrollments this term.</p>
+{% endif %}
+{% endblock %}

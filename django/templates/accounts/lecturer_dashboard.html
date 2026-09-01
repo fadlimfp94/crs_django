@@ -21,11 +21,10 @@
 
   <div class="card">
     <h2 class="card__title">Teaching</h2>
-    <p class="lede">Section assignments are not available yet.</p>
-    <ul class="roadmap">
-      <li><span class="badge badge--todo">Phase 2</span> Sections assigned to you</li>
-      <li><span class="badge badge--todo">Phase 4</span> Class rosters and grade submission</li>
-    </ul>
+    <p class="lede" data-testid="lecturer-section-count">
+      Assigned to {{ section_count }} section{{ section_count|pluralize }}.
+    </p>
+    <a href="{% url 'registration:lecturer_sections' %}" class="btn" data-testid="dashboard-my-sections-link">My sections</a>
   </div>
 </div>
 {% endblock %}
