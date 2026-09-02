@@ -83,3 +83,23 @@ jobs:
           name: playwright-report
           path: playwright/playwright-report/
           retention-days: 7
+
+  deploy:
+    name: Deploy to VPS
+    needs: [django, e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/crs_django
+            sudo -u crs git pull --ff-only
+            sudo -u crs /opt/crs_django/django/.venv/bin/pip install -r django/requirements.txt
+            cd django
+            sudo -u crs env $(cat .env | xargs) /opt/crs_django/django/.venv/bin/python manage.py migrate --noinput
+            sudo -u crs env $(cat .env | xargs) /opt/crs_django/django/.venv/bin/python manage.py collectstatic --noinput
+            systemctl restart crs-django
