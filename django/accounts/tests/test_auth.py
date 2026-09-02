@@ -1,6 +1,7 @@
 """Tests for authentication, role routing, and access control."""
 
 from django.contrib.messages import get_messages
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -92,6 +93,66 @@ class LoginTests(AuthTestCase):
         self.client.force_login(self.student)
         response = self.client.get(reverse("accounts:login"))
         self.assertRedirects(response, reverse("accounts:student_dashboard"))
+
+
+class LoginThrottlingTests(AuthTestCase):
+    """
+    Rate-limited per client IP (see accounts/throttling.py), reusing the
+    "auth" rate already applied to the DRF token endpoint (10/min). Only
+    failed attempts count, so this drives every attempt with a wrong
+    password. Dedicated TEST-NET-2 addresses (RFC 5737) keep this isolated
+    from every other test in this file, which all post from the default
+    127.0.0.1.
+    """
+
+    IP = "198.51.100.7"
+    OTHER_IP = "198.51.100.8"
+
+    def setUp(self):
+        cache.clear()
+
+    def _attempt(self, ip):
+        return self.client.post(
+            reverse("accounts:login"),
+            {"username": self.student.username, "password": "wrong-password"},
+            REMOTE_ADDR=ip,
+        )
+
+    def test_the_eleventh_attempt_from_one_ip_in_a_minute_is_throttled(self):
+        for _ in range(10):
+            response = self._attempt(self.IP)
+            self.assertEqual(response.status_code, 200)
+
+        response = self._attempt(self.IP)
+        self.assertEqual(response.status_code, 429)
+
+    def test_throttle_is_scoped_per_ip(self):
+        for _ in range(10):
+            self._attempt(self.IP)
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"username": self.student.username, "password": PASSWORD},
+            REMOTE_ADDR=self.OTHER_IP,
+        )
+        self.assertRedirects(response, reverse("accounts:student_dashboard"))
+
+    def test_successful_logins_do_not_count_against_the_limit(self):
+        """
+        A burst of legitimate logins from one IP (a shared office NAT, a test
+        suite) must never be locked out — only repeated failures should trip
+        this. Regression test: this exact scenario broke the Playwright suite
+        (all logins from 127.0.0.1) the first time this throttle counted
+        every attempt regardless of outcome.
+        """
+        for _ in range(15):
+            self.client.logout()
+            response = self.client.post(
+                reverse("accounts:login"),
+                {"username": self.student.username, "password": PASSWORD},
+                REMOTE_ADDR=self.IP,
+            )
+            self.assertRedirects(response, reverse("accounts:student_dashboard"))
 
 
 class LogoutTests(AuthTestCase):

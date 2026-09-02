@@ -249,15 +249,23 @@ Suites: authentication (login, bad credentials, logout, role redirects), catalog
 - The lecturer grading test asserts the graded row *disappears* from the roster's "Enrolled" table rather than asserting the recorded letter grade is shown there — `record_grade` transitions the enrollment to `COMPLETED`, and `roster.html` has no table for completed students.
 - `tsconfig.json` uses `"moduleResolution": "bundler"` rather than the plan's implied default — the installed TypeScript 7 removed the classic `"node"` alias outright (`TS5108`).
 
-### Phase 7 — Compose Multiplatform mobile
+### Phase 7 — Compose Multiplatform mobile ⏸ DEFERRED
 Scaffold the CMP project (Kotlin Multiplatform, Android + iOS). Shared `commonMain`: Ktor client against the Phase 5 API, `kotlinx.serialization` models, repositories, ViewModels, Compose UI, and secure token storage per platform. Screens: login, catalogue with search, section detail, register/drop, my timetable, profile. Handle offline gracefully — cache the catalogue, queue nothing, and show clear connectivity state. Surface API rule errors verbatim from the server.
 
 *Done when:* both an Android emulator and an iOS simulator run a full login → browse → register → view timetable flow against a local Django server.
 
-### Phase 8 — CI, hardening, documentation
-GitHub Actions: lint → Django unit tests → Playwright E2E on every push; CMP build on changes under `cmp/`. Then a hardening pass: SQLite `WAL` mode and a busy timeout, `SECRET_KEY` and `DEBUG` from the environment, CSRF/session/security headers, throttling on auth endpoints, structured logging, and a load sanity check on the registration endpoint (see §8). Finish the README, API docs, and a data-model diagram.
+**Deferred 2026-09-02:** the user decided not to build the mobile clients for now — the Django app plus REST API plus Playwright suite already cover the product. `cmp/` stays a placeholder; revisit this phase if/when mobile is actually needed. Phase 8 proceeds without it.
+
+### Phase 8 — CI, hardening, documentation ✅ COMPLETE
+GitHub Actions: lint → Django unit tests → Playwright E2E on every push. (CMP build step dropped along with Phase 7 — add it back if Phase 7 is revived.) Then a hardening pass: SQLite `WAL` mode and a busy timeout, `SECRET_KEY` and `DEBUG` from the environment, CSRF/session/security headers, throttling on auth endpoints, structured logging, and a load sanity check on the registration endpoint (see §8). Finish the README, API docs, and a data-model diagram.
 
 *Done when:* CI is green on a fresh clone and the hardening checklist is fully ticked.
+
+**Delivered:** Most of the hardening checklist turned out to already be in place from earlier phases — WAL mode/busy timeout/`IMMEDIATE` transactions (`config/settings/base.py`), env-required `SECRET_KEY`/`ALLOWED_HOSTS` with a hard `ImproperlyConfigured` failure (`config/settings/prod.py`), CSRF/session/security headers and HSTS, structured logging, and DRF `ScopedRateThrottle` on the token-auth endpoint (`api/views.py`) were all written incrementally as the concurrency risk surfaced in earlier phases. Phase 8 closed the five genuine gaps: (1) `accounts/throttling.py` adds IP-keyed rate limiting to the session-based `LoginView`, reusing the same `"auth"` rate (10/min) already applied to the DRF endpoint via Django's own cache framework rather than a new dependency; (2) `.github/workflows/ci.yml` runs `ruff`/`black`/`manage.py test` then, gated on that job, a full Playwright run on a fresh Python+Node runner; (3) `academics/management/commands/seed_load_test_fixtures.py` plus `scripts/load_test_registration.py` fire real concurrent HTTP registrations at a disposable-DB `runserver` process — the HTTP-level counterpart to `registration/tests/test_concurrency.py`'s in-process correctness test — confirmed clean (exactly `capacity` ENROLLED, zero errors) on a 40-student/10-seat run; (4) `django/.env.example` documents every var `prod.py` reads; (5) a Mermaid `erDiagram` in README's new "Data model" section renders the entity relationships GitHub-native, cross-referencing this section for field/rule detail. `manage.py check --deploy` under prod settings with a real secret key comes back with zero `security.*` warnings (the three `drf_spectacular.W001` schema-naming notices are pre-existing and unrelated to hardening). Full regression stayed green throughout: 328 Python tests, `ruff`/`black` clean, 28/28 Playwright.
+
+**Deviations from plan:**
+- Building the login throttle exposed a real bug in its first form: counting *every* login attempt (success or failure) against one IP throttled the Playwright suite itself, since all 28 tests log in from `127.0.0.1` and blew past 10/min well within a run. Fixed by counting only *failed* attempts — better security posture anyway (credential stuffing is characterised by failures, not successes) — and added a regression test (`test_successful_logins_do_not_count_against_the_limit`) asserting 15 successful logins from one IP never trip it.
+- The plan described the login throttle as living in `accounts/views.py` "or a new `accounts/throttling.py` if it grows past a few lines" — it grew past a few lines (rate parsing, cache key derivation, the failed-vs-successful split), so it's a dedicated module.
 
 ---
 
@@ -270,8 +278,8 @@ GitHub Actions: lint → Django unit tests → Playwright E2E on every push; CMP
 | M3 | **Registration works** | 3–4 | Core value delivered end to end |
 | M4 | API ready | 5 | Mobile unblocked |
 | M5 | Regression-protected | 6 | Changes are safe to make |
-| M6 | Mobile shipped | 7 | All three clients working |
-| M7 | Production-ready | 8 | CI green, hardened, documented |
+| M6 | Mobile shipped | 7 | All three clients working — ⏸ deferred, see Phase 7 |
+| M7 | Production-ready | 8 | CI green, hardened, documented — ✅ Done |
 
 M3 is the point at which CRS becomes useful. Everything before it is scaffolding; everything after extends reach.
 
@@ -303,4 +311,5 @@ M3 is the point at which CRS becomes useful. Everything before it is scaffolding
 8. ~~Phase 4 — the web UI.~~ ✅ Done. Student catalogue browse/filter, section detail, register/drop with confirmation, "my timetable", enrollment history; lecturer roster and grade entry; admin registration-window control and enrollment override — verified through a real HTTP walkthrough, not just the test client.
 9. ~~Phase 5 — the REST API.~~ ✅ Done. DRF viewsets/serializers for courses, sections, terms, and enrollments; token auth for mobile; structured `{"rule": "R5", "detail": "..."}` errors on registration/drop failures; permission classes enforcing that a student only ever sees their own enrollments.
 10. ~~Phase 6 — the Playwright E2E suite.~~ ✅ Done. Disposable-database server lifecycle, 13 Page Object Models, and 28 tests covering auth, catalogue, all seven registration rules, waitlist promotion, lecturer grading, and admin controls — 3 consecutive clean runs confirmed.
-11. Begin Phase 7 — the Compose Multiplatform mobile client.
+11. ~~Phase 7 — the Compose Multiplatform mobile client.~~ ⏸ Deferred 2026-09-02 — user decision, not needed for now.
+12. ~~Phase 8 — CI, hardening, documentation.~~ ✅ Done. Web-login throttling (failed attempts only, after a Playwright regression caught the naive version), `.github/workflows/ci.yml` (lint → Django tests → Playwright E2E), an HTTP-level load sanity script confirming exact-capacity enrollment under real concurrency, `.env.example`, and a Mermaid data-model diagram in README. `manage.py check --deploy` clean of security warnings; 328 Python tests and 28/28 Playwright tests green.

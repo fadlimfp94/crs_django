@@ -9,6 +9,7 @@ attach real content.
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -18,12 +19,21 @@ from registration.models import EnrollmentStatus
 
 from .forms import CRSAuthenticationForm
 from .mixins import AdministratorRequiredMixin, LecturerRequiredMixin, StudentRequiredMixin
+from .throttling import is_rate_limited, record_failed_attempt
 
 
 class LoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
     form_class = CRSAuthenticationForm
     redirect_authenticated_user = True
+
+    def post(self, request, *args, **kwargs):
+        if is_rate_limited(request, scope="login"):
+            return HttpResponse("Too many login attempts. Try again shortly.", status=429)
+        response = super().post(request, *args, **kwargs)
+        if not request.user.is_authenticated:
+            record_failed_attempt(request, scope="login")
+        return response
 
     def get_success_url(self):
         # Honour ?next= when present, otherwise send the user to their own dashboard.

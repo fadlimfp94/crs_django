@@ -16,7 +16,7 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 6 of 8 complete.** The Django app is fully usable through the browser and has a REST API alongside it: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The API (`/api/v1/`) exposes the same journeys over token/session auth with an OpenAPI schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. A Playwright suite now drives all of this through a real browser against a disposable seeded database — 28 tests covering auth, catalogue, every registration rule, waitlist promotion, lecturer grading, and admin controls. The `cmp/` directory is still a placeholder, so its instructions below will not run until Phase 7 is done.
+**All active phases complete; Phase 7 (mobile) deferred.** The Django app is fully usable through the browser and has a REST API alongside it: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The API (`/api/v1/`) exposes the same journeys over token/session auth with an OpenAPI schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. A Playwright suite drives all of this through a real browser against a disposable seeded database — 28 tests covering auth, catalogue, every registration rule, waitlist promotion, lecturer grading, and admin controls. GitHub Actions runs the lint/Django/Playwright gate on every push, the registration endpoint has a manual HTTP-level load sanity check, and the hardening checklist (WAL SQLite, env-based secrets, security headers, auth throttling) is fully ticked. The Compose Multiplatform mobile clients (Phase 7) are deferred for now — not currently needed — so `cmp/` stays a placeholder.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -27,8 +27,8 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 | 4 | Web UI | ✅ Done |
 | 5 | REST API | ✅ Done |
 | 6 | Playwright E2E suite | ✅ Done |
-| 7 | Compose Multiplatform mobile apps | ⬜ Next |
-| 8 | CI, hardening, documentation | ⬜ |
+| 7 | Compose Multiplatform mobile apps | ⏸ Deferred |
+| 8 | CI, hardening, documentation | ✅ Done |
 
 ---
 
@@ -121,13 +121,26 @@ ruff check .          # lint  (--fix to autofix)
 black .               # format
 ```
 
-Before deploying, verify the production configuration:
+Before deploying, copy [`django/.env.example`](django/.env.example) to `.env`, fill it in, and verify the production configuration:
 
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.prod \
 DJANGO_SECRET_KEY=... DJANGO_ALLOWED_HOSTS=crs.example.edu \
   python manage.py check --deploy
 ```
+
+### Load testing
+
+`scripts/load_test_registration.py` is a manual sanity check for the registration endpoint under real concurrency — the HTTP-level counterpart to `registration/tests/test_concurrency.py`'s in-process correctness test. It spins up its own disposable SQLite database and `runserver` process (same disposable-DB pattern the Playwright suite uses), seeds one small-capacity section plus a batch of students with auth tokens, then fires every student's registration at once over real HTTP:
+
+```bash
+cd django
+source .venv/bin/activate
+python scripts/load_test_registration.py                       # 40 students, capacity 10
+python scripts/load_test_registration.py --students 100 --capacity 20
+```
+
+It reports the wall-clock time and the ENROLLED/WAITLISTED tally, and exits non-zero if the seat count doesn't land exactly on capacity or any request errors (including a SQLite lock error). This is a script you run by hand before a real registration window opens — deliberately not part of `manage.py test` or CI.
 
 ## End-to-end tests — `playwright/`
 
@@ -146,7 +159,7 @@ npm run test:nightly                 # Chromium + Firefox + WebKit
 
 The suite starts and stops its own Django server against a disposable, freshly seeded SQLite database on port 8765 (override with `CRS_E2E_PORT`) — no manual setup, and it never touches your development database. `playwright/utils/global-setup.ts` runs `migrate`, `seed_demo_data`, and a Playwright-only `seed_e2e_fixtures` command (a handful of hard-to-reach fixtures: a full section, a timetable clash, a credit-limit breach) before the server starts, and tears everything down — server process and temp database file — when the run ends.
 
-## Mobile apps — `cmp/` *(available from Phase 7)*
+## Mobile apps — `cmp/` *(Phase 7 — deferred, not currently planned)*
 
 ```bash
 cd cmp
@@ -159,6 +172,27 @@ open iosApp/iosApp.xcodeproj                     # then Run in Xcode for iOS
 Both targets expect a reachable CRS API. Point them at your local server via the base URL in the shared Ktor client configuration — note that an Android emulator reaches the host machine at `10.0.2.2`, not `localhost`.
 
 ---
+
+## Data model
+
+See [PLAN.md §5](PLAN.md#5-data-model) for field-level detail and the R1–R7 registration rules. Structure and relationships only:
+
+```mermaid
+erDiagram
+    User ||--o| StudentProfile : "1:1"
+    User ||--o| LecturerProfile : "1:1"
+    Department ||--o{ Program : "1:*"
+    Department ||--o{ Course : "1:*"
+    Program ||--o{ StudentProfile : "1:*"
+    Department ||--o{ LecturerProfile : "1:*"
+    Course }o--o{ Course : "prerequisites (M:M, self-referential)"
+    Course ||--o{ Section : "1:*"
+    Term ||--o{ Section : "1:*"
+    LecturerProfile |o--o{ Section : "0/1:*"
+    Section ||--o{ Meeting : "1:*"
+    StudentProfile ||--o{ Enrollment : "1:*"
+    Section ||--o{ Enrollment : "1:*"
+```
 
 ## Repository layout
 

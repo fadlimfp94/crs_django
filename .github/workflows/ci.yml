@@ -1,0 +1,85 @@
+name: CI
+
+# Mirrors PLAN.md Phase 8: lint -> Django unit tests -> Playwright E2E on
+# every push. There is deliberately no `cmp/` build job — Phase 7 (the
+# Compose Multiplatform mobile client) is deferred; add one back here if
+# that phase is revived.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  django:
+    name: Django lint + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        working-directory: django
+        run: pip install -r requirements-dev.txt
+
+      - name: ruff
+        working-directory: django
+        run: ruff check .
+
+      - name: black
+        working-directory: django
+        run: black --check .
+
+      - name: Django test suite
+        working-directory: django
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+        run: python manage.py test
+
+  e2e:
+    name: Playwright E2E
+    needs: django
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Django dependencies
+        working-directory: django
+        run: pip install -r requirements-dev.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Playwright dependencies
+        working-directory: playwright
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the E2E suite
+        working-directory: playwright
+        env:
+          # django-server.ts spawns `manage.py` with this interpreter,
+          # falling back to django/.venv/bin/python — which doesn't exist
+          # on a CI runner, so point it at the one setup-python provisioned.
+          CRS_E2E_PYTHON: python
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright/playwright-report/
+          retention-days: 7
