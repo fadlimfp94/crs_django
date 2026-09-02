@@ -38,7 +38,9 @@ if not ALLOWED_HOSTS:
         "DJANGO_ALLOWED_HOSTS must list at least one hostname in production."
     )
 
-CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith(".")]
+_ssl = os.environ.get("DJANGO_SECURE_SSL", "1") != "0"
+_scheme = "https" if _ssl else "http"
+CSRF_TRUSTED_ORIGINS = [f"{_scheme}://{h}" for h in ALLOWED_HOSTS if not h.startswith(".")]
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 # Keep the SQLite file outside the source tree so a redeploy cannot clobber it.
@@ -47,8 +49,6 @@ if db_path := os.environ.get("DJANGO_DB_PATH"):
     DATABASES["default"]["NAME"] = db_path
 
 # ─── Security ─────────────────────────────────────────────────────────────────
-
-_ssl = os.environ.get("DJANGO_SECURE_SSL", "1") != "0"
 
 SECURE_SSL_REDIRECT = _ssl
 SESSION_COOKIE_SECURE = _ssl
