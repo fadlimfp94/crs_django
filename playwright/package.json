@@ -1,0 +1,19 @@
+{
+  "name": "crs-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright end-to-end suite for the Course Registration System.",
+  "scripts": {
+    "test": "playwright test",
+    "test:nightly": "playwright test --config=playwright.nightly.config.ts",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2"
+  }
+}

@@ -16,7 +16,7 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 
 ## Project status
 
-**Phase 5 of 8 complete.** The Django app is fully usable through the browser and now has a REST API alongside it: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The API (`/api/v1/`) exposes the same journeys over token/session auth with an OpenAPI schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. The `playwright/` and `cmp/` directories are still placeholders, so their instructions below will not run until the phases noted beside them are done.
+**Phase 6 of 8 complete.** The Django app is fully usable through the browser and has a REST API alongside it: students browse the catalogue with filters, register/drop sections with confirmation and inline rule-rejection messages, view a weekly timetable and enrollment history; lecturers see their assigned sections, rosters, and submit grades; administrators control registration windows and can override an enrollment beyond what the Django admin gives for free. The API (`/api/v1/`) exposes the same journeys over token/session auth with an OpenAPI schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. A Playwright suite now drives all of this through a real browser against a disposable seeded database — 28 tests covering auth, catalogue, every registration rule, waitlist promotion, lecturer grading, and admin controls. The `cmp/` directory is still a placeholder, so its instructions below will not run until Phase 7 is done.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -26,8 +26,8 @@ See **[PLAN.md](PLAN.md)** for the full development plan, data model, and phased
 | 3 | Registration rule engine | ✅ Done |
 | 4 | Web UI | ✅ Done |
 | 5 | REST API | ✅ Done |
-| 6 | Playwright E2E suite | ⬜ Next |
-| 7 | Compose Multiplatform mobile apps | ⬜ |
+| 6 | Playwright E2E suite | ✅ Done |
+| 7 | Compose Multiplatform mobile apps | ⬜ Next |
 | 8 | CI, hardening, documentation | ⬜ |
 
 ---
@@ -129,20 +129,22 @@ DJANGO_SECRET_KEY=... DJANGO_ALLOWED_HOSTS=crs.example.edu \
   python manage.py check --deploy
 ```
 
-## End-to-end tests — `playwright/` *(available from Phase 6)*
+## End-to-end tests — `playwright/`
 
 ```bash
 cd playwright
 npm install
-npx playwright install --with-deps
+npx playwright install --with-deps chromium
 
-npx playwright test                  # headless, all suites
+npx playwright test                  # headless, Chromium only — the CI gate
 npx playwright test --headed         # watch it run
 npx playwright test --ui             # interactive runner
 npx playwright show-report           # last HTML report
+
+npm run test:nightly                 # Chromium + Firefox + WebKit
 ```
 
-The suite starts and stops its own Django server against a disposable, freshly seeded SQLite database — no manual setup, and it never touches your development database.
+The suite starts and stops its own Django server against a disposable, freshly seeded SQLite database on port 8765 (override with `CRS_E2E_PORT`) — no manual setup, and it never touches your development database. `playwright/utils/global-setup.ts` runs `migrate`, `seed_demo_data`, and a Playwright-only `seed_e2e_fixtures` command (a handful of hard-to-reach fixtures: a full section, a timetable clash, a credit-limit breach) before the server starts, and tears everything down — server process and temp database file — when the run ends.
 
 ## Mobile apps — `cmp/` *(available from Phase 7)*
 
